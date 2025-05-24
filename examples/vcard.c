@@ -11,7 +11,9 @@
  */
 
 #include <assert.h>
+#ifndef _WIN32
 #include <libgen.h> /* basename */
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,10 +58,18 @@ static void vcard_photo(vcard_t *vc, xmpp_stanza_t *stanza)
     copy = (char *)malloc(strlen(s) + 1);
     assert(copy != NULL);
     copy[0] = '\0';
+#ifdef _WIN32
+    tok = strtok_s(s, "\n\r", &saveptr);
+#else
     tok = strtok_r(s, "\n\r", &saveptr);
+#endif
     while (tok != NULL) {
         strcat(copy, tok);
+#ifdef _WIN32
+        tok = strtok_s(NULL, "\n\r", &saveptr);
+#else
         tok = strtok_r(NULL, "\n\r", &saveptr);
+#endif
     }
 
     xmpp_base64_decode_bin(vc->ctx, copy, strlen(copy), &img, &img_size);
@@ -252,7 +262,11 @@ int main(int argc, char **argv)
         prog = argc > 0 ? strdup(argv[0]) : NULL;
         printf("Usage: %s <login-jid> <password> <recipient-jid> "
                "[image-file]\n\n",
+#ifdef _WIN32
+               "vcard");
+#else
                prog == NULL ? "vcard" : basename(prog));
+#endif
         printf("If vCard contains a photo it will be stored to "
                "image-file. If you don't provide the image-file "
                "default filename will be generated.\n");
